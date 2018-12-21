@@ -1,0 +1,52 @@
+{
+    "parser": "babel-eslint",
+
+    "env": {
+        "browser": true,
+        "es6": true,
+        "jest": true
+    },
+    "extends": [
+        "eslint:recommended",
+        "plugin:react/recommended"
+    ],
+    "parserOptions": {
+        "ecmaFeatures": {
+            "experimentalObjectRestSpread": true,
+            "classes": true,
+            "jsx": true
+        },
+        "sourceType": "module"
+    },
+    "rules": {
+        "comma-spacing": ["warn", { "before": false, "after": true }],
+        "computed-property-spacing": ["warn", "never"],
+        "indent": [ "warn", 4 ],
+        "linebreak-style": [ "warn", "unix" ],
+        "no-var": [ "warn" ],
+        "no-console": [ "warn" ],
+        "quotes": [ "warn", "single" ],
+        "semi": [ "warn", "never" ],
+        "keyword-spacing": ["warn", {
+            "before": true,
+            "after": true,
+            "overrides": {
+                "if": { "after": false },
+                "for": { "after": false },
+                "while": { "after": false }
+            }
+        }],
+        "space-before-function-paren": [ "warn", "never" ],
+        "space-in-parens": [
+            "warn",
+            "always",
+            {
+                "exceptions": [
+                    "empty",
+                    "{}"
+                ]
+            }
+        ],
+        "object-curly-spacing": ["warn", "always"]
+    }
+}

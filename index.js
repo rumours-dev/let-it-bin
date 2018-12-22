@@ -19,7 +19,11 @@ const apiBase = {
             GET: {
                 'Accept': 'application/json',
                 'Accept-Charset' : 'utf-8',
-            }
+            },
+            PUT: {
+                'Content-Type': 'application/json',
+                'Content-Length': '245'
+            },
         }
     },
     glotio: {
@@ -59,7 +63,9 @@ export default class LetItBin {
         const formatData = text => {
             if( this.__service === 'friendpaste' )
                 return {
-                    'snippet': text
+                    'title': '',
+                    'snippet': text,
+                    'language': 'text'
                 }
             if( this.__service === 'glotio' )
                 return {
@@ -69,7 +75,7 @@ export default class LetItBin {
                 }
             if( this.__service === 'github' )
                 return {
-                    'files': {
+                    files: {
                         'gistfile1.txt': {
                             'content': text
                         }
@@ -78,18 +84,21 @@ export default class LetItBin {
             if( this.__service === 'writeas' )
                 return {
                     //TODO token de l'article si pas de compte
-                    'body': text
+                    body: text
                 }
         }
 
         const data = formatData( newText )
 
-        const method = apiBase[this.___service].updateMethod
+        const method = apiBase[this.__service].updateMethod
 
-        this.resquest( method, id, data )
+
+
+        return this.request( method, id, JSON.stringify( data ) )
     }
 
-    async request( method, path ){
+    async request( method, path, data = {}){
+        // TODO getHeaders() getConfig()
         let headers = Object.assign( apiBase[this.__service].headers[method] )
 
         if( this.__auth.token )
@@ -105,12 +114,15 @@ export default class LetItBin {
 
         const config = {
             method,
-            headers
+            headers,
         }
+
+        if( method !== 'GET' )
+            config.body = data
 
         const response = await fetch( url, config )
             .then( res => res.json() )
-            .then( res => res.snippet )
+            .then( res => res )
 
         return response
     }

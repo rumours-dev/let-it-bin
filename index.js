@@ -1,20 +1,47 @@
 import { Base64 } from 'js-base64'
+const fetch = require( 'node-fetch' )
 
 const apiBase = {
-    github: 'https://api.github.com/gists/',
-    friendpaste: 'https://friendpaste.com/',
-    glotio: 'https://snippets.glot.io/snippets/',
-    writeas: 'https://write.as/api/posts/'
+    github: {
+        url: 'https://api.github.com/gists/',
+        updateMethod: 'PATCH',
+        headers: {
+            GET: {
+                'Accept': 'application/vnd.github.v3+json',
+                'Accept-Charset' : 'utf-8',
+            }
+        }
+    },
+    friendpaste: {
+        url: 'https://friendpaste.com/',
+        updateMethod: 'PUT',
+        headers: {
+            GET: {
+                'Accept': 'application/json',
+                'Accept-Charset' : 'utf-8',
+            }
+        }
+    },
+    glotio: {
+        url: 'https://snippets.glot.io/snippets/',
+        updateMethod: 'PUT',
+    },
+    writeas: {
+        url: 'https://write.as/api/posts/',
+        updateMethod: 'POST',
+    },
 }
 
 export default class LetItBin {
-    constructor( service, auth ) {
-        this.__apiBase = apiBase[service]
+    constructor( service, auth = {}) {
+        this.__apiBase = apiBase[service].url
+
         this.__auth = {
             token: auth.token,
             username: auth.username,
             password: auth.password,
         }
+
         this.__service = service
 
         if( auth.token ) {
@@ -24,8 +51,8 @@ export default class LetItBin {
         }
     }
 
-    getBack( id ){
-        this.request( 'GET', id )
+    get( id ){
+        return this.request( 'GET', id )
     }
 
     update( id, newText ){
@@ -57,22 +84,19 @@ export default class LetItBin {
 
         const data = formatData( newText )
 
-        this.resquest( 'PUT', id, data )
+        const method = apiBase[this.___service].updateMethod
+
+        this.resquest( method, id, data )
     }
 
     async request( method, path ){
-        let headers = new Headers({
-            'Content-Type': 'application/json',
-            'Accept-Charset' : 'utf-8',
-        })
+        let headers = Object.assign( apiBase[this.__service].headers[method] )
 
         if( this.__auth.token )
-            headers.append( 'Authorization', 'Token ' + this.__auth.token )
-        if( this.__service === 'github' )
-            headers.append( 'Accept: application/vnd.github.v3+json' )
+            headers.Authorization = 'Token ' + this.__auth.token
 
         if( this.__authorizationHeader )
-            headers.append( 'Authorization', this.__authorizationHeader )
+            headers.Authorization = this.__authorizationHeader
 
         let url = this.__apiBase
         if( this.__service === 'github' )
@@ -80,16 +104,15 @@ export default class LetItBin {
         url += path
 
         const config = {
-            url,
             method,
             headers
         }
 
-        const response = await fetch( config )
+        const response = await fetch( url, config )
+            .then( res => res.json() )
+            .then( res => res.snippet )
 
-        const responseJson = await response.json()
-
-        return responseJson
+        return response
     }
 
 }

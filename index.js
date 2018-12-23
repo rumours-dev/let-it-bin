@@ -1,44 +1,10 @@
+import apiBase from './apiBase'
 import { Base64 } from 'js-base64'
 const fetch = require( 'node-fetch' )
 
-const apiBase = {
-    github: {
-        url: 'https://api.github.com/gists/',
-        updateMethod: 'PATCH',
-        headers: {
-            GET: {
-                'Accept': 'application/vnd.github.v3+json',
-                'Accept-Charset' : 'utf-8',
-            }
-        }
-    },
-    friendpaste: {
-        url: 'https://friendpaste.com/',
-        updateMethod: 'PUT',
-        headers: {
-            GET: {
-                'Accept': 'application/json',
-                'Accept-Charset' : 'utf-8',
-            },
-            PUT: {
-                'Content-Type': 'application/json',
-                'Content-Length': '245'
-            },
-        }
-    },
-    glotio: {
-        url: 'https://snippets.glot.io/snippets/',
-        updateMethod: 'PUT',
-    },
-    writeas: {
-        url: 'https://write.as/api/posts/',
-        updateMethod: 'POST',
-    },
-}
-
 export default class LetItBin {
     constructor( service, auth = {}) {
-        this.__apiBase = apiBase[service].url
+        this.__url = apiBase[service].url
 
         this.__auth = {
             token: auth.token,
@@ -48,77 +14,63 @@ export default class LetItBin {
 
         this.__service = service
 
-        if( auth.token ) {
+        if( auth.token )
             this.__authorizationHeader = 'token ' + auth.token
-        } else if( auth.username && auth.password ) {
-            this.__authorizationHeader = 'Basic ' + Base64.encode( auth.username + ':' + auth.password )
-        }
+        else if( auth.username && auth.password )
+            this.__authorizationHeader = 'Basic ' + Base64.encode(
+                auth.username + ':' + auth.password
+            )
     }
 
     get( id ){
-        return this.request( 'GET', id )
+        const method = 'GET'
+
+        const url = this.getUrl( id )
+
+        return this.request({ method, url })
     }
 
     update( id, newText ){
-        const formatData = text => {
-            if( this.__service === 'friendpaste' )
-                return {
-                    'title': '',
-                    'snippet': text,
-                    'language': 'text'
-                }
-            if( this.__service === 'glotio' )
-                return {
-                    'files': {
-                        'content': text
-                    }
-                }
-            if( this.__service === 'github' )
-                return {
-                    files: {
-                        'gistfile1.txt': {
-                            'content': text
-                        }
-                    }
-                }
-            if( this.__service === 'writeas' )
-                return {
-                    //TODO token de l'article si pas de compte
-                    body: text
-                }
-        }
-
-        const data = formatData( newText )
+        const data = apiBase[this.__service].formatData( newText )
 
         const method = apiBase[this.__service].updateMethod
 
+        const url = this.getUrl( id )
 
-
-        return this.request( method, id, JSON.stringify( data ) )
+        return this.request({ method, url, data })
     }
 
-    async request( method, path, data = {}){
-        // TODO getHeaders() getConfig()
-        let headers = Object.assign( apiBase[this.__service].headers[method] )
+    create( text ) {
+        const data = apiBase[this.__service].formatData( text )
 
-        if( this.__auth.token )
-            headers.Authorization = 'Token ' + this.__auth.token
+        const method = apiBase[this.__service].createMethod
 
-        if( this.__authorizationHeader )
-            headers.Authorization = this.__authorizationHeader
+        return this.request({ method, data })
 
-        let url = this.__apiBase
+    }
+
+    getUrl( id ) {
+        let url = this.__url
         if( this.__service === 'github' )
             url += this.__auth.username + '/'
-        url += path
+        url += id
+
+        return url
+    }
+
+    async request({ method, url = this.__url, data }){
+        let headers = Object.assign( apiBase[this.__service].headers[method] )
+        if( this.__auth.token )
+            headers.Authorization = 'Token ' + this.__auth.token
+        if( this.__authorizationHeader )
+            headers.Authorization = this.__authorizationHeader
 
         const config = {
             method,
             headers,
         }
-
-        if( method !== 'GET' )
-            config.body = data
+        if( data )
+            config.body = JSON.stringify( data )
 
         const response = await fetch( url, config )
             .then( res => res.json() )
@@ -126,5 +78,4 @@ export default class LetItBin {
 
         return response
     }
-
 }

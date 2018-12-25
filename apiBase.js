@@ -86,14 +86,14 @@ const apiBase = {
 
             return json
         },
-        handleResponse: ( res, url ) => {
+        handleResponse: ( res, url, data ) => {
             try {
                 if( !res.snippet && !res.ok ) throw new Error()
 
                 const response = Object.assign({}, responseType )
                 response.url = res.url || url
                 response.id = res.id
-                if( res.snippet ) response.content = res.snippet
+                response.content = res.snippet || data.snippet
 
                 return response
             } catch ( error ){

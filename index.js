@@ -1,6 +1,7 @@
 import apiBase from './apiBase'
-import { Base64 } from 'js-base64'
 const fetch = require( 'node-fetch' )
+
+const useragent = 'user-agent'
 
 /**
 * Create an instance of LetItBin.
@@ -33,9 +34,21 @@ export default class LetItBin {
     get( id ){
         const method = 'GET'
 
+        const headers = this.__apibase.headers[method]( this.__auth )
+        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
+
+        const config = {
+            method,
+            headers,
+        }
+
         const url = this.__url + '/' + id
 
-        return this.request({ method, url })
+        return request({
+            url,
+            config,
+            callback: this.__apibase.handleResponse
+        })
     }
 
     /**
@@ -46,13 +59,28 @@ export default class LetItBin {
     * @return	{Promise}		Promise object of a request() of id with newText.
     */
     update( id, newText ){
-        const data = this.__apibase.formatData( newText )
+        if( !this.__apibase.methods.update ) throw new Error( 'No update method' )
 
-        const method = this.__apibase.updateMethod
+        const body = JSON.stringify( this.__apibase.formatData( newText ) )
+
+        const method = this.__apibase.methods.update
+
+        const headers = this.__apibase.headers[method]( this.__auth )
+        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
+
+        const config = {
+            method,
+            headers,
+            body,
+        }
 
         const url = this.__url + '/' + id
 
-        return this.request({ method, url, data })
+        return request({
+            url,
+            config,
+            callback: this.__apibase.handleResponse
+        })
     }
 
     /**
@@ -62,91 +90,97 @@ export default class LetItBin {
     * @return	{Promise}		Promise object of a request() with Text.
     */
     create( text ) {
-        const data = this.__apibase.formatData( text )
+        if( !this.__apibase.methods.create ) throw new Error( 'No create method' )
 
-        const method = this.__apibase.createMethod
+        const body = JSON.stringify(  this.__apibase.formatData( text ) )
 
-        if( this.__service === 'github' ){
-            const url = this.__url
-            return this.request({ method, data, url })
+        const method = this.__apibase.methods.create
+
+        const headers = this.__apibase.headers[method]( this.__auth )
+        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
+
+        const config = {
+            method,
+            headers,
+            body,
         }
 
-        return this.request({ method, data })
+        const url = this.__url
+
+        return request({
+            url,
+            config,
+            callback: this.__apibase.handleResponse
+        })
     }
 
     /**
-    * Make request
+    * Make a DELETE request to delete a gist
     *
-    * @param	{Object}		config			Configuration for fetch.
-    * @param	{string}		config.method	Method (GET|POST|PATCH).
-    * @param	{string}		config.url		Url to fetch.
-    * @param	{Object}		config.data		Json to send.
-    * @param	{boolean}		config.auth		False to avoid asking headers.Authorization.
-    * @return	{Object}		Response Object of a request.
+    * @param	{string}		id			Id of the gist.
+    * @return	{Promise}		Promise object of a request() of id.
     */
-    async request({ method, url = this.__url, data, auth = true }){
-        try {
-            const useragent = 'user-agent'
-            let headers = Object.assign( this.__apibase.headers[method] )
-            headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
-            if( this.__apibase.authorizationNeeded && auth )
-                headers.Authorization = this.getAuthorizationHeader()
+    delete( id ){
+        if( !this.__apibase.methods.delete ) throw new Error( 'No delete method' )
 
-            const config = {
-                method,
-                headers,
-            }
-            if( data )
-                config.body = JSON.stringify( data )
+        const method = this.__apibase.methods.delete
 
-            const response = await fetch( url, config )
-                .then( res => {
-                    if( res.status >= 200 && res.status < 300 )
-                        return res.json()
+        const headers = this.__apibase.headers[method]( this.__auth )
+        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
 
-                    const error = new Error( res.statusText || res.status )
-                    error.response = res
-                    throw error
-                })
-                .then( json => {
-                    return this.__apibase.handleResponse( json, url, data )
-                })
-
-            return response
-        } catch ( error ) {
-            throw error
+        const config = {
+            method,
+            headers,
         }
+
+        const url = this.__url + '/' + id
+
+        return request({
+            url,
+            config,
+            callback: this.__apibase.handleResponse
+        })
     }
 
     /**
-    * Get Authorization Header for a request
+    * Get methods accepted by the service.
     *
-    * @return	{string}		header.Authorization.
+    * @return	{Array}		Array of methods (string).
     */
-    getAuthorizationHeader(){
-        const token = 'access_token'
+    get methods(){
+        return Object.keys( this.__apibase.methods )
+    }
+}
 
-        if( this.__auth.token )
-            return 'Token ' + this.__auth.token
+/**
+* Make request
+*
+* @param	{Object}		config			Configuration for fetch.
+* @param	{string}		config.method	Method (GET|POST|PATCH).
+* @param	{string}		config.url		Url to fetch.
+* @param	{Object}		config.data		Json to send.
+* @return	{Object}		Response Object of a request.
+*/
+const request = async({ url, config, callback }) => {
+    const data = config.body
+        ? JSON.parse( config.body )
+        : {}
 
-        if( this.__service === 'github' ){
-            return 'Basic ' + Base64.encode(
-                this.__auth.username + ':' + this.__auth.password
-            )
-        }
+    try {
+        const response = await fetch( url, config )
+            .then( res => {
+                if( res.status === 204 )
+                    throw new Error( 'No Content' )
+                if( res.status >= 200 && res.status < 300 )
+                    return res.json()
 
-        if( this.__service === 'writeas' ){
-            const authResponse = this.request({
-                url: 'https://write.as/api/auth/login',
-                method: 'POST',
-                data: {
-                    alias:this.__auth.username,
-                    pass:this.__auth.password
-                },
-                auth: false
+                const error = new Error( res.statusText || res.status )
+                error.response = res
+                throw error
             })
-            this.__auth.token = authResponse.data[token]
-            return 'Token' + this.__auth.token
-        }
+            .then( json => callback( json, url, data ) )
+        return response
+    } catch ( error ) {
+        throw error
     }
 }

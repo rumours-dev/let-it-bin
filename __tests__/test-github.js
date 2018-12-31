@@ -1,7 +1,7 @@
 import LetItBin from '../index'
 
 const letItBin = new LetItBin( 'github', {
-    username: '***',
+    username: 'KaaJaryi',
     password: '***'
 })
 
@@ -25,11 +25,18 @@ test( 'test update', async() => {
     expect( undo.content ).toBe( '444' )
 })
 
-test( 'test create', async() => {
-    expect.assertions( 1 )
+test( 'test create & delete', async() => {
+    expect.assertions( 2 )
 
-    const create = await letItBin.create( 'blabla' )
-    expect( create.content ).toBe( 'blabla' )
+    try {
+        const create = await letItBin.create( 'blabla' )
+
+        expect( create.content ).toBe( 'blabla' )
+
+        await letItBin.delete( create.id )
+    } catch ( e ) {
+        expect( e.message ).toBe( 'No Content' )
+    }
 })
 
 test( 'test error', async() => {

@@ -1,29 +1,55 @@
+import { Base64 } from 'js-base64'
+
 const responseType = {
     url: '',
     id: '',
     content: '',
 }
 
+const token = 'access_token'
+
 const apiBase = {
     github: {
         url: 'https://api.github.com/gists',
-        authorizationNeeded: true,
-        updateMethod: 'PATCH',
-        createMethod: 'POST',
-        deleteMethod: 'DELETE',
+        methods: {
+            update: 'PATCH',
+            create: 'POST',
+            delete: 'DELETE',
+        },
         headers: {
-            GET: {
-                'Accept': 'application/vnd.github.v3+json',
-                'Accept-Charset' : 'utf-8',
-                'User-Agent': 'let-it-bin',
+            GET: () => {
+                return {
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Accept-Charset' : 'utf-8',
+                    //            'User-Agent': 'let-it-bin',
+                }
             },
-            PATCH: {
-                'Content-Type': 'application/vnd.github.v3+json',
-                'User-Agent': 'let-it-bin',
+            PATCH: auth => {
+                return {
+                    'Content-Type': 'application/vnd.github.v3+json',
+                    //'User-Agent': 'let-it-bin',
+                    'Authorization': 'Basic ' +  Base64.encode(
+                        auth.username + ':' + auth.password
+                    )
+                }
             },
-            POST: {
-                'Content-Type': 'application/vnd.github.v3+json',
-                'User-Agent': 'let-it-bin',
+            POST: auth => {
+                return {
+                    'Content-Type': 'application/vnd.github.v3+json',
+                    //'User-Agent': 'let-it-bin',
+                    'Authorization': 'Basic ' +  Base64.encode(
+                        auth.username + ':' + auth.password
+                    )
+                }
+            },
+            DELETE: auth => {
+                return {
+                    'Content-Type': 'application/vnd.github.v3+json',
+                    //'User-Agent': 'let-it-bin',
+                    'Authorization': 'Basic ' +  Base64.encode(
+                        auth.username + ':' + auth.password
+                    )
+                }
             },
         },
         formatData: text => {
@@ -32,12 +58,11 @@ const apiBase = {
             const json = Object.assign({}, {
                 files: {
                     [gitsfile]: {
-                        content: '',
+                        content: text,
                     }
                 }
             })
 
-            json.files[gitsfile].content = text
             return json
         },
         handleResponse: res => {
@@ -58,37 +83,42 @@ const apiBase = {
     },
     friendpaste: {
         url: 'https://friendpaste.com',
-        authorizationNeeded: false,
-        updateMethod: 'PUT',
-        createMethod: 'POST',
+        methods: {
+            update: 'PUT',
+            create: 'POST',
+        },
         headers: {
-            GET: {
-                'Accept': 'application/json',
-                'Accept-Charset' : 'utf-8',
+            GET: () => {
+                return {
+                    'Accept': 'application/json',
+                    'Accept-Charset' : 'utf-8',
+                }
             },
-            PUT: {
-                'Content-Type': 'application/json',
-                'Content-Length': '245'
+            PUT: () => {
+                return {
+                    'Content-Type': 'application/json',
+                    'Content-Length': '245'
+                }
             },
-            POST: {
-                'Content-Type': 'application/json',
-                'Content-Length': '245'
+            POST: () => {
+                return {
+                    'Content-Type': 'application/json',
+                    'Content-Length': '245'
+                }
             },
         },
         formatData: text => {
             const json = Object.assign({}, {
                 title: '',
-                snippet: '',
+                snippet: text,
                 language: 'text'
             })
-
-            json.snippet = text
 
             return json
         },
         handleResponse: ( res, url, data ) => {
             try {
-                if( !res.snippet && !res.ok ) throw new Error()
+                if( !res.snippet && !res.ok ) throw new Error( 'nothing' )
 
                 const response = Object.assign({}, responseType )
                 response.url = res.url || url
@@ -104,64 +134,121 @@ const apiBase = {
     },
     glotio: {
         url: 'https://snippets.glot.io/snippets',
-        updateMethod: 'PUT', //requires token
-        createMethod: 'POST', //requires token, except anonymous snippet
-        deleteMethod: 'DELETE', //retquire token
+        methods: {
+            update: 'PUT', //requires token
+            create: 'POST', //requires token, except anonymous snippet
+            delete: 'DELETE', //require token
+        },
         headers: {
-            GET: {
-                'Accept': 'application/json',
-                'Accept-Charset' : 'utf-8',
+            GET: () => {
+                return {
+                    'Accept': 'application/json',
+                    'Accept-Charset' : 'utf-8',
+                }
             },
-            PUT: {
-                'Content-Type': 'application/json',
-                'Content-Length': '245'
+            PUT: () => {
+                return {
+                    'Content-Type': 'application/json',
+                    'Content-Length': '245'
+                }
             },
-            POST: {
-                'Content-Type': 'application/json',
-                'Content-Length': '245'
+            POST: () => {
+                return {
+                    'Content-Type': 'application/json',
+                    'Content-Length': '245'
+                }
             },
         },
         formatData: text => {
             const json = Object.assign({}, {
                 files: [{
-                    content: ''
+                    content: text
                 }]
             })
-
-            json.files.content = text
 
             return json
         },
     },
     writeas: {
         url: 'https://write.as/api/posts',
-        updateMethod: 'POST', //requires token
-        createMethod: 'POST',
-        deleteMethod: 'DELETE', //requires token
+        methods: {
+            update: 'POST', //requires token
+            create: 'POST',
+            delete: 'DELETE', //requires token
+        },
         headers: {
-            GET: {
-                'Accept': 'application/json',
-                'Accept-Charset' : 'utf-8',
+            GET: () => {
+                return {
+                    'Accept': 'application/json',
+                    'Accept-Charset' : 'utf-8',
+                }
             },
-            PUT: {
-                'Content-Type': 'application/json',
-                'Content-Length': '245'
+            PUT: () => {
+                return {
+                    'Content-Type': 'application/json',
+                    'Content-Length': '245'
+                }
             },
-            POST: {
-                'Content-Type': 'application/json',
-                'Content-Length': '245'
+            POST: () => {
+                return {
+                    'Content-Type': 'application/json',
+                    'Content-Length': '245'
+                }
             },
         },
         formatData: text => {
             const json = Object.assign({}, {
-                body: ''
+                body: text
             })
-
-            json.body = text
 
             return json
         },
     },
+    pastee: {
+        url: 'https://api.paste.ee/v1/pastes/',
+        methods: {
+            create: 'POST', //require username
+            delete: 'DELETE', //require username
+        },
+        headers: {
+            GET: auth => {
+                return {
+                    'Accept': 'application/json',
+                    'Accept-Charset' : 'utf-8',
+                    'Authorization': 'Basic ' + Base64.encode( auth.username )
+                }
+            },
+            POST: auth => {
+                return {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Basic ' + Base64.encode( auth.username )
+                }
+            },
+        },
+        formatData: text => {
+            const json = Object.assign({}, {
+                sections: [{
+                    contents: text
+                }]
+            })
+
+            return json
+        },
+        handleResponse: ( res, url, data ) => {
+            try {
+                const response = Object.assign({}, responseType )
+
+                response.url = res.link || url
+                response.id = res.id || res.paste.id
+                response.content = res.paste.sections[0].contents
+                                    || data.sections[0].contents
+
+                return response
+            } catch ( error ) {
+                throw new Error( error )
+            }
+        }
+    }
 }
 
 export default apiBase

@@ -6,8 +6,6 @@ const responseType = {
     content: '',
 }
 
-const token = 'access_token'
-
 const apiBase = {
     github: {
         url: 'https://api.github.com/gists',
@@ -136,7 +134,7 @@ const apiBase = {
         url: 'https://snippets.glot.io/snippets',
         methods: {
             update: 'PUT', //requires token
-            create: 'POST', //requires token, except anonymous snippet
+            create: 'POST', //token optional
             delete: 'DELETE', //require token
         },
         headers: {
@@ -146,17 +144,25 @@ const apiBase = {
                     'Accept-Charset' : 'utf-8',
                 }
             },
-            PUT: () => {
-                return {
+            PUT: auth => {
+                const headers = {
                     'Content-Type': 'application/json',
-                    'Content-Length': '245'
+                    'Content-Length': '245',
                 }
+                if( auth.token )
+                    headers.Authorization = 'Token ' + auth.token
+
+                return headers
             },
-            POST: () => {
-                return {
+            POST: auth => {
+                const headers = {
                     'Content-Type': 'application/json',
-                    'Content-Length': '245'
+                    'Content-Length': '245',
                 }
+                if( auth.token )
+                    headers.Authorization = 'Token ' + auth.token
+
+                return headers
             },
         },
         formatData: text => {
@@ -168,32 +174,61 @@ const apiBase = {
 
             return json
         },
+        handleResponse: res => {
+            try {
+                if( !res.id ) throw new Error( 'Response doesn\'t have an id' )
+
+                const response = Object.assign({}, responseType )
+                response.url = res.url
+                response.id = res.id
+                response.content = res.files[0].content
+
+                return response
+            } catch ( error ){
+                error.message = res.reason
+                throw error
+            }
+        }
     },
     writeas: {
         url: 'https://write.as/api/posts',
+        authentificationUrl: 'https://write.as/api/auth/login',
+        needToken: true,
         methods: {
             update: 'POST', //requires token
             create: 'POST',
-            delete: 'DELETE', //requires token
+            authentification: 'POST'
         },
         headers: {
-            GET: () => {
-                return {
+            GET: auth => {
+                const headers = {
                     'Accept': 'application/json',
                     'Accept-Charset' : 'utf-8',
                 }
+                if( auth.token )
+                    headers.Authorization = 'Token ' + auth.token
+
+                return headers
             },
-            PUT: () => {
-                return {
+            PUT: auth => {
+                const headers = {
                     'Content-Type': 'application/json',
-                    'Content-Length': '245'
+                    'Content-Length': '245',
                 }
+                if( auth.token )
+                    headers.Authorization = 'Token ' + auth.token
+
+                return headers
             },
-            POST: () => {
-                return {
+            POST: auth => {
+                const headers = {
                     'Content-Type': 'application/json',
-                    'Content-Length': '245'
+                    'Content-Length': '245',
                 }
+                if( auth.token )
+                    headers.Authorization = 'Token ' + auth.token
+
+                return headers
             },
         },
         formatData: text => {
@@ -203,52 +238,40 @@ const apiBase = {
 
             return json
         },
-    },
-    pastee: {
-        url: 'https://api.paste.ee/v1/pastes/',
-        methods: {
-            create: 'POST', //require username
-            delete: 'DELETE', //require username
+        formatAuthentificationData: auth => {
+            return {
+                alias: auth.username,
+                pass: auth.password,
+            }
         },
-        headers: {
-            GET: auth => {
-                return {
-                    'Accept': 'application/json',
-                    'Accept-Charset' : 'utf-8',
-                    'Authorization': 'Basic ' + Base64.encode( auth.username )
-                }
-            },
-            POST: auth => {
-                return {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Basic ' + Base64.encode( auth.username )
-                }
-            },
-        },
-        formatData: text => {
-            const json = Object.assign({}, {
-                sections: [{
-                    contents: text
-                }]
-            })
-
-            return json
-        },
-        handleResponse: ( res, url, data ) => {
+        handleResponse: ( res, url ) => {
             try {
-                const response = Object.assign({}, responseType )
+                if( !res.data.id ) throw new Error( 'Response doesn\'t have an id' )
 
-                response.url = res.link || url
-                response.id = res.id || res.paste.id
-                response.content = res.paste.sections[0].contents
-                                    || data.sections[0].contents
+                const response = Object.assign({}, responseType )
+                response.url = url
+                response.id = res.data.id
+                response.content = res.data.body
 
                 return response
-            } catch ( error ) {
-                throw new Error( error )
+            } catch ( error ){
+                error.message = res.reason
+                throw error
+            }
+        },
+        extractToken: res => {
+            try {
+                if( !res.data ) throw new Error( 'No token' )
+                const token = 'access_token'
+
+                return res.data[token]
+            } catch ( error ){
+                const errmess = 'error_msg'
+                error.message = res[errmess]
+                throw error
             }
         }
-    }
+    },
 }
 
 export default apiBase

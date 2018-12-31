@@ -1,7 +1,5 @@
 import apiBase from './apiBase'
-const fetch = require( 'node-fetch' )
-
-const useragent = 'user-agent'
+import { request, getToken, getHeaders } from './utils'
 
 /**
 * Create an instance of LetItBin.
@@ -31,11 +29,16 @@ export default class LetItBin {
     * @param	{string}		id			Id of the gist/snippet to GET.
     * @return	{Promise}		Promise object of a request() of id.
     */
-    get( id ){
+    async get( id ){
+        if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
+            this.__auth.token = await getToken( this.__apibase, this.__auth )
+                .then( res => res )
+                .catch( err => {throw err })
+        }
+
         const method = 'GET'
 
-        const headers = this.__apibase.headers[method]( this.__auth )
-        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
+        const headers = getHeaders( this.__apibase.headers[method], this.__auth )
 
         const config = {
             method,
@@ -58,15 +61,19 @@ export default class LetItBin {
     * @param	{string}		newText		New text for the gist.
     * @return	{Promise}		Promise object of a request() of id with newText.
     */
-    update( id, newText ){
+    async update( id, newText ){
         if( !this.__apibase.methods.update ) throw new Error( 'No update method' )
+        if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
+            this.__auth.token = await getToken( this.__apibase, this.__auth )
+                .then( res => res )
+                .catch( err => {throw err })
+        }
 
         const body = JSON.stringify( this.__apibase.formatData( newText ) )
 
         const method = this.__apibase.methods.update
 
-        const headers = this.__apibase.headers[method]( this.__auth )
-        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
+        const headers = getHeaders( this.__apibase.headers[method], this.__auth )
 
         const config = {
             method,
@@ -89,15 +96,19 @@ export default class LetItBin {
     * @param	{string}		text			Text to write in the new gist.
     * @return	{Promise}		Promise object of a request() with Text.
     */
-    create( text ) {
+    async create( text ) {
         if( !this.__apibase.methods.create ) throw new Error( 'No create method' )
+        if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
+            this.__auth.token = await getToken( this.__apibase, this.__auth )
+                .then( res => res )
+                .catch( err => {throw err })
+        }
 
         const body = JSON.stringify(  this.__apibase.formatData( text ) )
 
         const method = this.__apibase.methods.create
 
-        const headers = this.__apibase.headers[method]( this.__auth )
-        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
+        const headers = getHeaders( this.__apibase.headers[method], this.__auth )
 
         const config = {
             method,
@@ -122,11 +133,15 @@ export default class LetItBin {
     */
     delete( id ){
         if( !this.__apibase.methods.delete ) throw new Error( 'No delete method' )
+        if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
+            this.__auth.token = getToken( this.__apibase, this.__auth )
+                .then( res => res )
+                .catch( err => {throw err })
+        }
 
         const method = this.__apibase.methods.delete
 
-        const headers = this.__apibase.headers[method]( this.__auth )
-        headers[useragent] = 'https://github.com/KaaJaryi/let-it-bin'
+        const headers = getHeaders( this.__apibase.headers[method], this.__auth )
 
         const config = {
             method,
@@ -149,38 +164,5 @@ export default class LetItBin {
     */
     get methods(){
         return Object.keys( this.__apibase.methods )
-    }
-}
-
-/**
-* Make request
-*
-* @param	{Object}		config			Configuration for fetch.
-* @param	{string}		config.method	Method (GET|POST|PATCH).
-* @param	{string}		config.url		Url to fetch.
-* @param	{Object}		config.data		Json to send.
-* @return	{Object}		Response Object of a request.
-*/
-const request = async({ url, config, callback }) => {
-    const data = config.body
-        ? JSON.parse( config.body )
-        : {}
-
-    try {
-        const response = await fetch( url, config )
-            .then( res => {
-                if( res.status === 204 )
-                    throw new Error( 'No Content' )
-                if( res.status >= 200 && res.status < 300 )
-                    return res.json()
-
-                const error = new Error( res.statusText || res.status )
-                error.response = res
-                throw error
-            })
-            .then( json => callback( json, url, data ) )
-        return response
-    } catch ( error ) {
-        throw error
     }
 }

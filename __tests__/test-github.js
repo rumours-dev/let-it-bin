@@ -1,28 +1,36 @@
 import LetItBin from '../index'
 
+/*
+ * In intend to use this test, replace:
+ * 'username' by your write.as usename
+ * 'password' by your write.as password
+ * 'gist' by the id of a gist of your user account
+ * 'content' by the content of this user gist
+ */
+
 const letItBin = new LetItBin( 'github', {
-    username: 'KaaJaryi',
-    password: '***'
+    username: 'username',
+    password: 'password
 })
 
 test( 'test get', async() => {
     expect.assertions( 2 )
 
-    const bin = await letItBin.get( '***' )
+    const bin = await letItBin.get( 'gist )
 
-    expect( bin.id ).toBe( '***' )
-    expect( bin.content ).toBe( '444' )
+    expect( bin.id ).toBe( 'gist )
+    expect( bin.content ).toBe( 'content' )
 })
 
 test( 'test update', async() => {
     expect.assertions( 3 )
 
-    const change = await letItBin.update( '***', 'fff' )
-    const undo = await letItBin.update( '***', '444' )
+    const change = await letItBin.update( 'gist 'fff' )
+    const undo = await letItBin.update( 'gist 'content' )
 
-    expect( change.id ).toBe( '***' )
+    expect( change.id ).toBe( 'gist )
     expect( change.content ).toBe( 'fff' )
-    expect( undo.content ).toBe( '444' )
+    expect( undo.content ).toBe( 'content' )
 })
 
 test( 'test create & delete', async() => {

@@ -5,6 +5,8 @@ Let It Bin provides a wrapper arround a few API for gist manipulations
 Currently support:
 * [Github Gists API](https://gist.github.com/) ( get | update | create | delete )
 * [Friendpaste API](https://friendpaste.com/) ( get | update | create )
+* [write.as API](https://write.as/) ( get | update | create )
+* [glot.io API](https://glot.io/) ( get | update | create | delete ) => user token needed
 
 ## Usage
 

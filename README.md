@@ -3,9 +3,9 @@
 Let It Bin provides a wrapper arround a few API for gist manipulations
 
 Currently support:
-* [Github Gists API](https://gist.github.com/) ( get | update | create | delete )
+* [Github Gists API](https://gist.github.com/) ( get | update | create | delete | getToken )
 * [Friendpaste API](https://friendpaste.com/) ( get | update | create )
-* [write.as API](https://write.as/) ( get | update | create )
+* [write.as API](https://write.as/) ( get | update | create | getToken ) cross-origin request not enabled
 * [glot.io API](https://glot.io/) ( get | update | create | delete ) => user token needed
 
 ## Usage
@@ -18,10 +18,16 @@ const gitHub = new LetItBin( 'github', {
     password: 'MyUserPassword',
 }
 
+// this method is call everytime a request is made
+github.getToken()
+    .then( res => console.log( res )
+    // true
+    .catch( err => console.log( err )
+    // false
+
 gitHub.get( 'SomeGistId' )
     .then( res => console.log( res ) )
     /**
-    * return an Object
     * {
     *   url:        'https://api.github.com/gists/SomeGistId',
     *   id:         'SomeGistId',
@@ -33,11 +39,9 @@ gitHub.get( 'SomeGistId' )
     * return an Error Object
     */
 
-
 github.update( 'SomeGistId', 'NewText' )
     .then( res => console.log( res ) )
     /**
-    * return an Object
     * {
     *   url:        'https://api.github.com/gists/SomeGistId',
     *   id:         'SomeGistId',
@@ -52,7 +56,6 @@ github.update( 'SomeGistId', 'NewText' )
 github.create( 'SomeText' )
     .then( res => console.log( res ) )
     /**
-    * return an Object
     * {
     *   url:        'https://api.github.com/gists/SomeGistId',
     *   id:         'SomeGistId',
@@ -63,4 +66,7 @@ github.create( 'SomeText' )
     /**
     * return an Error Object
     */
+
+github.methods
+// return [ get, update, create, delete, getToken ]
 ```

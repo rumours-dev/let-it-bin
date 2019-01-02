@@ -1,39 +1,48 @@
+require( 'dotenv' ).load()
 import LetItBin from '../index'
 
 /*
  * In intend to use this test, replace:
- * 'username' by your write.as usename
- * 'password' by your write.as password
- * 'gist' by the id of a gist of your user account
- * 'content' by the content of this user gist
+ * process.env.GITHUBLOG by your write.as usename
+ * process.env.GITHUBPASS by your write.as password
+ * process.env.GITHUBGIST by the id of a gist of your user account
+ * process.env.GITHUBCONT by the content of this user gist
  */
 
 const letItBin = new LetItBin( 'github', {
-    username: 'username',
-    password: 'password
+    username: process.env.GITHUBLOG,
+    password: process.env.GITHUBPASS
 })
 
-test( 'test get', async() => {
+test( 'get', async() => {
     expect.assertions( 2 )
 
-    const bin = await letItBin.get( 'gist )
+    const bin = await letItBin.get( process.env.GITHUBGIST )
 
-    expect( bin.id ).toBe( 'gist )
-    expect( bin.content ).toBe( 'content' )
+    expect( bin.id ).toBe( process.env.GITHUBGIST )
+    expect( bin.content ).toBe( process.env.GITHUBCONT )
 })
 
-test( 'test update', async() => {
+test( 'get token', async() => {
+    expect.assertions( 1 )
+
+    const token = await letItBin.getToken()
+
+    expect( token ).toBe( true )
+})
+
+test( 'update', async() => {
     expect.assertions( 3 )
 
-    const change = await letItBin.update( 'gist 'fff' )
-    const undo = await letItBin.update( 'gist 'content' )
+    const change = await letItBin.update( process.env.GITHUBGIST, 'fff' )
+    const undo = await letItBin.update( process.env.GITHUBGIST, process.env.GITHUBCONT )
 
-    expect( change.id ).toBe( 'gist )
+    expect( change.id ).toBe( process.env.GITHUBGIST )
     expect( change.content ).toBe( 'fff' )
-    expect( undo.content ).toBe( 'content' )
+    expect( undo.content ).toBe( process.env.GITHUBCONT )
 })
 
-test( 'test create & delete', async() => {
+test( 'create & delete', async() => {
     expect.assertions( 2 )
 
     try {
@@ -47,7 +56,7 @@ test( 'test create & delete', async() => {
     }
 })
 
-test( 'test error', async() => {
+test( 'error', async() => {
     expect.assertions( 1 )
 
     try {

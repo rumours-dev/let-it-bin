@@ -1,5 +1,5 @@
-import apiBase from './apiBase'
-import { request, getToken, getHeaders } from './utils'
+import apiBase from './services'
+import { request, getHeaders } from './utils'
 
 /**
 * Create an instance of LetItBin.
@@ -24,6 +24,48 @@ export default class LetItBin {
     }
 
     /**
+    * Make a request for a token
+    *
+    * @return	{bolean}		Return true if this.__auth.token is define.
+    */
+    async getToken(){
+        if( this.__auth.token )
+            return true
+        if( !this.__apibase.extractToken
+            || ( this.__apibase.extractToken && !this.__auth.token && !this.__auth.username ) )
+            return false
+
+        const url = this.__apibase.authentificationUrl
+
+        const method = this.__apibase.methods.getToken
+
+        const headers = getHeaders( this.__apibase.headers[method], this.__auth )
+
+        const body = JSON.stringify( this.__apibase.formatAuthentificationData( this.__auth ) )
+
+        const config = {
+            method,
+            headers,
+            body
+        }
+
+        this.__auth.token = await request({
+            url,
+            config,
+            callback: this.__apibase.extractToken
+        })
+            .then( resToken => {
+                return resToken
+            })
+            .catch(  error => {
+                throw new Error( error, 'can\'t get token' )
+            })
+        return this.__auth.token
+            ? true
+            : false
+    }
+
+    /**
     * Make a GET request of a gist
     *
     * @param	{string}		id			Id of the gist/snippet to GET.
@@ -31,7 +73,7 @@ export default class LetItBin {
     */
     async get( id ){
         if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
-            this.__auth.token = await getToken( this.__apibase, this.__auth )
+            this.__auth.token = await this.getToken( this.__apibase, this.__auth )
                 .then( res => res )
                 .catch( err => {throw err })
         }
@@ -64,7 +106,7 @@ export default class LetItBin {
     async update( id, newText ){
         if( !this.__apibase.methods.update ) throw new Error( 'No update method' )
         if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
-            this.__auth.token = await getToken( this.__apibase, this.__auth )
+            this.__auth.token = await this.getToken( this.__apibase, this.__auth )
                 .then( res => res )
                 .catch( err => {throw err })
         }
@@ -96,10 +138,10 @@ export default class LetItBin {
     * @param	{string}		text			Text to write in the new gist.
     * @return	{Promise}		Promise object of a request() with Text.
     */
-    async create( text ) {
+    async create( text = '' ) {
         if( !this.__apibase.methods.create ) throw new Error( 'No create method' )
         if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
-            this.__auth.token = await getToken( this.__apibase, this.__auth )
+            this.__auth.token = await this.getToken( this.__apibase, this.__auth )
                 .then( res => res )
                 .catch( err => {throw err })
         }
@@ -134,7 +176,7 @@ export default class LetItBin {
     delete( id ){
         if( !this.__apibase.methods.delete ) throw new Error( 'No delete method' )
         if( this.__apibase.needToken && this.__auth.username && !this.__auth.token ){
-            this.__auth.token = getToken( this.__apibase, this.__auth )
+            this.__auth.token = this.getToken( this.__apibase, this.__auth )
                 .then( res => res )
                 .catch( err => {throw err })
         }
@@ -163,6 +205,8 @@ export default class LetItBin {
     * @return	{Array}		Array of methods (string).
     */
     get methods(){
-        return Object.keys( this.__apibase.methods )
+        const m = Object.keys( this.__apibase.methods )
+
+        return ['get', ...m]
     }
 }

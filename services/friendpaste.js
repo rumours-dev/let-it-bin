@@ -2,6 +2,9 @@ import responseType from './responseType'
 
 const friendpaste = {
     url: 'https://friendpaste.com',
+    informations: {
+        needed: ['id']
+    },
     methods: {
         update: 'PUT',
         create: 'POST',

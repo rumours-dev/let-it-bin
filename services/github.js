@@ -3,6 +3,9 @@ import responseType from './responseType'
 
 const github = {
     url: 'https://api.github.com/gists',
+    informations: {
+        needed: ['login', 'password', 'token', 'id']
+    },
     authentificationUrl: 'https://api.github.com/authorizations',
     methods: {
         update: 'PATCH',

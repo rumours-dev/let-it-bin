@@ -3,6 +3,9 @@ import responseType from './responseType'
 const writeas = {
     url: 'https://write.as/api/posts',
     authentificationUrl: 'https://write.as/api/auth/login',
+    informations: {
+        needed: ['login', 'password', 'id']
+    },
     methods: {
         update: 'POST', //requires token
         create: 'POST',

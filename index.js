@@ -210,3 +210,15 @@ export default class LetItBin {
         return ['get', ...m]
     }
 }
+
+export const listServices = () => {
+    const arr = []
+    Object.keys( apiBase ).forEach( service =>
+        arr.push({
+            name: service,
+            needed: apiBase[service].informations.needed
+        })
+    )
+    return arr
+}
+

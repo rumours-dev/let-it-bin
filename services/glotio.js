@@ -2,6 +2,9 @@ import responseType from './responseType'
 
 const glotio = {
     url: 'https://snippets.glot.io/snippets',
+    informations: {
+        needed: ['token', 'id']
+    },
     methods: {
         update: 'PUT', //requires token
         create: 'POST', //token optional
